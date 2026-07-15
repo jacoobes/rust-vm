@@ -9,20 +9,19 @@ enum Opcode {
     Add  { r1: usize, r2: usize, dest: usize},
     Sub  { r1: usize, r2: usize, dest: usize},
 }
-impl From<u16> for Opcode {
-    fn from(instruction: u16) -> Self {
-        let reg = (instruction  &  0xF000) >> 12;
-        let o1  = (instruction  &  0xF00) >> 8;
-        let o2  = (instruction  &  0xF0) >> 4;
-        let o3  = instruction   &  0xF;
-        let imm = (instruction  &  0xFF) as u32;
+impl From<u32> for Opcode {
+    fn from(instruction: u32) -> Self {
+        let reg: usize = ((instruction  &  0xF0000000) >> 28).try_into().unwrap();
+        let o1: usize  = ((instruction  &  0x0F000000) >> 24).try_into().unwrap();
+        let o2: usize  = ((instruction  &  0x00F00000) >> 20).try_into().unwrap();
+        let o3: usize =  ((instruction  &  0x000F0000) >> 16).try_into().unwrap();
+        let imm = instruction  &  0x0000FFFF;
 
         match reg {
             0 => Opcode::Halt,
-            1 => Opcode::Load { dst: o1.into(), val: imm },
-            2 => Opcode::Add  { r1: o1.into(), r2: o2.into(), dest: o3.into() },
-            3 => Opcode::Add  { r1: o1.into(), r2: o2.into(), dest: o3.into() },
-            4 => Opcode::Sub  { r1: o1.into(), r2: o2.into(), dest: o3.into() },
+            1 => Opcode::Load { dst: o1, val: imm },
+            2 => Opcode::Add  { r1: o1, r2: o2, dest: o3 },
+            3 => Opcode::Sub { r1: o1, r2: o2, dest: o3 },
             _ => panic!("Unknown instruction")
         }
     }
@@ -31,8 +30,8 @@ impl From<u16> for Opcode {
 
 fn main() {
 
-    let prog: [u16;4] = [ 0x1064, 0x11C8, 0x2012, 0x0000 ];
-    let mut regs: [u32;4] = [0,0,0,0];
+    let prog: [u32;4] = [ 0x10000064, 0x110000C8, 0x20120000, 0x0];
+    let mut regs: [u32;10] = [0;10];
 
 
     let mut ip = 0;
